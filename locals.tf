@@ -11,9 +11,18 @@ locals {
     ]
   ])
 
+  referenced_only_permission_sets = setsubtract(toset([
+    for assignment in var.account_assignments :
+    assignment.permission_set
+  ]), toset([
+    for ps_name, _ in var.permission_sets :
+    ps_name
+  ]))
+
   all_available_permission_sets = merge(
     data.aws_ssoadmin_permission_set.defaults,
-    aws_ssoadmin_permission_set.this
+    aws_ssoadmin_permission_set.this,
+    data.aws_ssoadmin_permission_set.this
   )
 
   account_assignments = flatten([

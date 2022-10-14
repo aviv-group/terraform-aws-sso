@@ -25,6 +25,23 @@ resource "aws_ssoadmin_managed_policy_attachment" "this" {
   managed_policy_arn = each.value.policy_arn
   permission_set_arn = aws_ssoadmin_permission_set.this[each.value.ps_name].arn
 }
+
+resource "aws_ssoadmin_customer_managed_policy_attachment" "this" {
+  for_each = { for ps_name, ps_attrs in var.permission_sets : ps_name => ps_attrs if can(ps_attrs.customer_policies) && ps_attrs.customer_policies != null }
+
+  instance_arn = local.ssoadmin_instance_arn
+  permission_set_arn = aws_ssoadmin_permission_set.this[each.key].arn
+
+  dynamic "customer_managed_policy_reference" {
+    for_each = each.value.customer_policies
+
+    content {
+      name = customer_managed_policy_reference.value
+      path = "/"
+    }
+  }
+}
+
 resource "aws_ssoadmin_account_assignment" "this" {
   for_each = { for assignment in local.account_assignments : "${assignment.principal_name}.${assignment.permission_set.name}.${assignment.account_id}" => assignment }
 

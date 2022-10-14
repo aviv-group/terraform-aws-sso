@@ -8,10 +8,12 @@ variable "permission_sets" {
     object(
       {
         description=optional(string),
-        managed_policies=list(string),
+        managed_policies=optional(list(string)),
         session_duration=optional(string),
         tags=optional(map(string)),
-        inline_policy=optional(string)
+        inline_policy=optional(string),
+        customer_policies=optional(list(string)),
+        # boundary=optional(string) when provider resource is able to manage boundary attachment
       }
     )
   )

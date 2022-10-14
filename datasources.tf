@@ -17,3 +17,10 @@ data "aws_identitystore_user" "this" {
     attribute_value = each.value
   }
 }
+
+data "aws_ssoadmin_permission_set" "this" {
+  for_each = local.referenced_only_permission_sets
+
+  instance_arn = local.ssoadmin_instance_arn
+  name = each.value
+}
