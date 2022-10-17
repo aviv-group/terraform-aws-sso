@@ -1,13 +1,13 @@
 locals {
   ssoadmin_instance_arn = tolist(data.aws_ssoadmin_instances.this.arns)[0]
-  managed_ps            = { for ps_name, ps_attrs in var.permission_sets : ps_name => ps_attrs if can(ps_attrs.managed_policies) }
+  managed_ps            = { for ps_name, ps_attrs in var.permission_sets : ps_name => ps_attrs if can(ps_attrs.managed_policies) && ps_attrs.managed_policies != null }
   # create ps_name and managed policy maps list
   ps_policy_maps = flatten([
     for ps_name, ps_attrs in local.managed_ps : [
       for policy in ps_attrs.managed_policies : {
         ps_name    = ps_name
         policy_arn = policy
-      } if can(ps_attrs.managed_policies)
+      } if can(ps_attrs.managed_policies) && ps_attrs.managed_policies != null
     ]
   ])
 
