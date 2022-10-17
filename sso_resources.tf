@@ -26,19 +26,29 @@ resource "aws_ssoadmin_managed_policy_attachment" "this" {
   permission_set_arn = aws_ssoadmin_permission_set.this[each.value.ps_name].arn
 }
 
+locals {
+  permission_sets_with_customer_managed_policies = { for ps_name, ps_attrs in var.permission_sets : ps_name => ps_attrs if can(ps_attrs.customer_policies) && ps_attrs.customer_policies != null }
+  permission_sets_customer_managed_policies_attachments = merge([
+    for ps_name, ps_attrs in local.permission_sets_with_customer_managed_policies :
+      {
+        for customer_policy in ps_attrs.customer_policies :
+        "${ps_name}<-${customer_policy}" => {
+          ps_name = ps_name
+          customer_policy = customer_policy
+        }
+      }
+  ]...)
+}
+
 resource "aws_ssoadmin_customer_managed_policy_attachment" "this" {
-  for_each = { for ps_name, ps_attrs in var.permission_sets : ps_name => ps_attrs if can(ps_attrs.customer_policies) && ps_attrs.customer_policies != null }
+  for_each = local.permission_sets_customer_managed_policies_attachments
 
   instance_arn = local.ssoadmin_instance_arn
-  permission_set_arn = aws_ssoadmin_permission_set.this[each.key].arn
+  permission_set_arn = aws_ssoadmin_permission_set.this[each.value.ps_name].arn
 
-  dynamic "customer_managed_policy_reference" {
-    for_each = each.value.customer_policies
-
-    content {
-      name = customer_managed_policy_reference.value
-      path = "/"
-    }
+  customer_managed_policy_reference {
+    name = each.value.customer_policy
+    path = "/"
   }
 }
 
